@@ -3,7 +3,8 @@ export type JobState =
   | 'Paused' | 'Finished' | 'Failed' | 'Cancelled';
 
 export type AnalysisStep =
-  | 'None' | 'Uploading' | 'DeepVariant' | 'SavingResults' | 'Completed';
+  | 'None' | 'Uploading' | 'DeepVariant'
+  | 'AlphaMissense' | 'SavingResults' | 'Completed';
 
 export interface JobProgress {
   id:           string;
@@ -28,9 +29,14 @@ export interface JobDetail extends JobSummary {
 }
 
 export interface VariantRow {
-  id:         string;
-  chromosome: string;
-  position:   number;
-  ref:        string;
-  alt:        string;
+  id:               string;
+  chromosome:       string;
+  position:         number;
+  ref:              string;
+  alt:              string;
+  // AlphaMissense
+  amScore?:         number;
+  amClassification?: string;
+  geneName?:        string;
+  proteinChange?:   string;
 }

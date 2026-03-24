@@ -239,7 +239,8 @@ export default function App() {
                 </div>
                 <VcfViewer
                   jobId={activeId}
-                  fileName={displayProgress.fileName}
+                                  fileName={displayProgress.fileName}
+                                  hasAmData={activeJob?.state === 'Finished'}
                 />
               </div>
             )}
