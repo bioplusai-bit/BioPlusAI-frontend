@@ -4,7 +4,7 @@ export type JobState =
 
 export type AnalysisStep =
   | 'None' | 'Uploading' | 'DeepVariant'
-  | 'AlphaMissense' | 'HyenaDna' | 'SavingResults' | 'Completed';
+  | 'AlphaMissense' | 'HyenaDna' | 'ClinVar' | 'SavingResults' | 'Completed';
 
 export interface JobProgress {
   id:           string;
@@ -43,4 +43,9 @@ export interface VariantRow {
   hyenaPattern?:     string;
   hyenaConfidence?:  number;
   hyenaAnnotation?:  string;
+  // ClinVar
+  clinVarId?:        string;
+  clinVarSig?:       string;
+  clinVarDisease?:   string;
+  clinVarName?:      string;
 }
