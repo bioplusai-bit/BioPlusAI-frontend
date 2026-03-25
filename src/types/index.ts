@@ -4,7 +4,7 @@ export type JobState =
 
 export type AnalysisStep =
   | 'None' | 'Uploading' | 'DeepVariant'
-  | 'AlphaMissense' | 'SavingResults' | 'Completed';
+  | 'AlphaMissense' | 'HyenaDna' | 'SavingResults' | 'Completed';
 
 export interface JobProgress {
   id:           string;
@@ -29,14 +29,18 @@ export interface JobDetail extends JobSummary {
 }
 
 export interface VariantRow {
-  id:               string;
-  chromosome:       string;
-  position:         number;
-  ref:              string;
-  alt:              string;
+  id:                string;
+  chromosome:        string;
+  position:          number;
+  ref:               string;
+  alt:               string;
   // AlphaMissense
-  amScore?:         number;
+  amScore?:          number;
   amClassification?: string;
-  geneName?:        string;
-  proteinChange?:   string;
+  geneName?:         string;
+  proteinChange?:    string;
+  // HyenaDNA
+  hyenaPattern?:     string;
+  hyenaConfidence?:  number;
+  hyenaAnnotation?:  string;
 }
