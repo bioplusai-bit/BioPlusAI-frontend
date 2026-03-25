@@ -7,6 +7,8 @@ import { usePolling }  from './hooks/usePolling';
 import { uploadFile, getJobs, getJob, pauseJob, resumeJob } from './services/api';
 import type { JobSummary, JobDetail } from './types';
 
+const API_BASE = process.env.REACT_APP_API_URL || 'https://bioplusaiv1-production.up.railway.app';
+
 export default function App() {
   const [jobs,      setJobs]      = useState<JobSummary[]>([]);
   const [activeId,  setActiveId]  = useState<string | null>(null);
@@ -18,7 +20,6 @@ export default function App() {
 
   const { data: progress, restart } = usePolling(activeId);
 
-  // Progress yangilanganda jobs list ham yangilanadi
   useEffect(() => {
     if (!progress) return;
     setJobs(prev => prev.map(j => j.id === progress.id ? { ...j, ...progress } : j));
@@ -27,7 +28,6 @@ export default function App() {
     }
   }, [progress]);
 
-  // Sahifa ochilganda tarix
   useEffect(() => { loadJobs(); }, []);
 
   const loadJobs = async () => {
@@ -84,7 +84,13 @@ export default function App() {
     finally { setActLoading(false); }
   }, [activeId, restart]);
 
-  // Active job — polling dan yoki detail dan
+  const handlePdfDownload = useCallback((id: string) => {
+    const a = document.createElement('a');
+    a.href = `${API_BASE}/api/dna/jobs/${id}/report`;
+    a.download = `bioplusai-report-${id.slice(0, 8)}.pdf`;
+    a.click();
+  }, []);
+
   const activeJob = jobs.find(j => j.id === activeId);
   const displayProgress = progress ?? (activeJob ? {
     id: activeJob.id, fileName: activeJob.fileName,
@@ -94,8 +100,9 @@ export default function App() {
     variantCount: activeJob.variantCount,
   } : null);
 
-  const isRunning = displayProgress?.state === 'Processing' || displayProgress?.state === 'Uploading';
-  const isPaused  = displayProgress?.state === 'Paused';
+  const isRunning  = displayProgress?.state === 'Processing' || displayProgress?.state === 'Uploading';
+  const isPaused   = displayProgress?.state === 'Paused';
+  const isFinished = displayProgress?.state === 'Finished';
 
   return (
     <div style={S.root}>
@@ -156,7 +163,6 @@ export default function App() {
 
       {/* ── Main ────────────────────────────────────────────────── */}
       <main style={S.main}>
-        {/* Error */}
         {error && (
           <div style={S.errBanner}>
             <span>⚠ {error}</span>
@@ -211,6 +217,17 @@ export default function App() {
                     Davom ettirish
                   </button>
                 )}
+                {isFinished && (
+                  <button style={{ ...S.actionBtn, ...S.pdfBtn }} onClick={() => handlePdfDownload(activeId)}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="12" y1="18" x2="12" y2="12"/>
+                      <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    PDF Hisobot
+                  </button>
+                )}
               </div>
             </div>
 
@@ -224,7 +241,7 @@ export default function App() {
               />
             </div>
 
-            {/* VCF Viewer — faqat VCF tayyor bo'lganda */}
+            {/* VCF Viewer */}
             {(displayProgress.outputVcfKey || detail?.outputVcfKey) && (
               <div style={S.card}>
                 <div style={S.cardTitle}>
@@ -239,8 +256,8 @@ export default function App() {
                 </div>
                 <VcfViewer
                   jobId={activeId}
-                                  fileName={displayProgress.fileName}
-                                  hasAmData={activeJob?.state === 'Finished'}
+                  fileName={displayProgress.fileName}
+                  hasAmData={activeJob?.state === 'Finished'}
                 />
               </div>
             )}
@@ -284,6 +301,7 @@ const S: Record<string, React.CSSProperties> = {
   actionBtn:    { display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 6, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'inherit', transition: 'all .15s' },
   pauseBtn:     { background: '#1c0a0a', borderColor: '#7f1d1d', color: '#fca5a5' },
   resumeBtn:    { background: '#071d2e', borderColor: '#0ea5e9', color: '#38bdf8' },
+  pdfBtn:       { background: '#1a0f3a', borderColor: '#8b5cf6', color: '#a78bfa' },
   card:         { background: '#0a1628', border: '1px solid #0f1f35', borderRadius: 10, padding: 20 },
   cardTitle:    { fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, textTransform: 'uppercase', letterSpacing: '0.08em' },
   varBadge:     { background: '#071d2e', border: '1px solid #0f3a56', color: '#22d3ee', borderRadius: 10, padding: '1px 8px', fontSize: 10, fontWeight: 600, textTransform: 'none', letterSpacing: 0 },
