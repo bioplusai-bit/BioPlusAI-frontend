@@ -53,6 +53,14 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
     } catch {}
   };
 
+  const handlePdfDownload = () => {
+    const API_BASE = process.env.REACT_APP_API_URL || 'https://bioplusaiv1-production.up.railway.app';
+    const a = document.createElement('a');
+    a.href = `${API_BASE}/api/dna/jobs/${jobId}/report`;
+    a.download = `bioplusai-report-${jobId.slice(0, 8)}.pdf`;
+    a.click();
+  };
+
   const pathCount    = variants?.filter(v => v.amClassification === 'PATHOGENIC').length ?? 0;
   const benignCount  = variants?.filter(v => v.amClassification === 'BENIGN').length ?? 0;
   const spliceCount  = variants?.filter(v => v.hyenaPattern === 'SPLICE_SITE').length ?? 0;
@@ -97,6 +105,12 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
               VCF yuklab olish
+            </button>
+            <button style={S.pdfBtn} onClick={handlePdfDownload}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              </svg>
+              PDF Hisobot
             </button>
           </div>
         </div>
@@ -220,6 +234,7 @@ const S: Record<string, React.CSSProperties> = {
   badge:       { fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap' },
   iconBtn:     { background: 'none', border: '1px solid #1e293b', borderRadius: 5, color: '#64748b', cursor: 'pointer', padding: '5px 7px', display: 'flex', alignItems: 'center' },
   downloadBtn: { display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', background: '#0f3a56', border: '1px solid #0ea5e9', borderRadius: 5, color: '#38bdf8', fontSize: 11, cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' },
+  pdfBtn:      { display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', background: '#1a0f3a', border: '1px solid #8b5cf6', borderRadius: 5, color: '#a78bfa', fontSize: 11, cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' },
   tabs:        { display: 'flex', borderBottom: '1px solid #1e293b' },
   tab:         { padding: '8px 16px', background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' },
   tabActive:   { color: '#38bdf8', borderBottom: '2px solid #0ea5e9' },
