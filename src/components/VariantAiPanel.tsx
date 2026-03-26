@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { VariantRow } from '../types';
+import { t, useLang } from '../i18n';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://bioplusaiv1-production.up.railway.app';
 
@@ -7,31 +8,32 @@ interface Message { role: 'user' | 'assistant'; content: string; }
 interface Props { variant: VariantRow | null; onClose: () => void; }
 
 function buildSystemPrompt(v: VariantRow): string {
-  return `Sen genomika bo'yicha mutaxassis AI yordamchisisiz. Foydalanuvchi genomik variant haqida savol bermoqda.
+  return `${t('aiSystem')}
 
-Variant ma'lumotlari:
-- Chromosoma: ${v.chromosome}, Pozitsiya: ${v.position}
-- O'zgarish: ${v.ref} → ${v.alt}
-${v.geneName ? `- Gen: ${v.geneName}` : ''}
-${v.amScore != null ? `- AlphaMissense: ${v.amScore} (${v.amClassification})` : "- AlphaMissense: ma'lumot yo'q"}
-${v.hyenaPattern ? `- HyenaDNA pattern: ${v.hyenaPattern} (${((v.hyenaConfidence ?? 0) * 100).toFixed(0)}% ishonch)` : ''}
-${v.hyenaAnnotation ? `- Annotatsiya: ${v.hyenaAnnotation}` : ''}
+Variant data:
+- Chromosome: ${v.chromosome}, Position: ${v.position}
+- Change: ${v.ref} → ${v.alt}
+${v.geneName ? `- Gene: ${v.geneName}` : ''}
+${v.amScore != null ? `- AlphaMissense: ${v.amScore} (${v.amClassification})` : '- AlphaMissense: no data'}
+${v.hyenaPattern ? `- HyenaDNA pattern: ${v.hyenaPattern} (${((v.hyenaConfidence ?? 0) * 100).toFixed(0)}% confidence)` : ''}
+${v.hyenaAnnotation ? `- Annotation: ${v.hyenaAnnotation}` : ''}
 
-Qoidalar: O'zbek tilida, qisqa (2-4 gap), tibbiy terminlarni oddiy tilda tushuntir, klinik ahamiyatini ayt.`;
+${t('aiRules')}`;
 }
 
 function buildInitialMessage(v: VariantRow): string {
   const parts: string[] = [];
-  if (v.geneName) parts.push(`**${v.geneName}** genida`);
-  parts.push(`${v.chromosome}:${v.position} pozitsiyasida ${v.ref}→${v.alt} o'zgarish`);
+  if (v.geneName) parts.push(`**${v.geneName}**`);
+  parts.push(`${v.chromosome}:${v.position} ${v.ref}→${v.alt}`);
   if (v.amClassification && v.amClassification !== 'unknown')
     parts.push(`AlphaMissense: **${v.amClassification}** (${v.amScore?.toFixed(3)})`);
   if (v.hyenaPattern && v.hyenaPattern !== 'UNKNOWN')
     parts.push(`HyenaDNA: **${v.hyenaPattern}**`);
-  return `Bu variant haqida tushuntiring: ${parts.join(', ')}`;
+  return `${t('aiExplain')} ${parts.join(', ')}`;
 }
 
 export const VariantAiPanel: React.FC<Props> = ({ variant, onClose }) => {
+  useLang(); // re-render on lang change
   const [messages,  setMessages]  = useState<Message[]>([]);
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
@@ -68,10 +70,10 @@ export const VariantAiPanel: React.FC<Props> = ({ variant, onClose }) => {
         body: JSON.stringify({ system: buildSystemPrompt(v), messages: newHistory }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'API xato');
+      if (!res.ok) throw new Error(data.error || 'API error');
       setMessages(prev => [...prev, { role: 'assistant', content: data.text }]);
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `Xato: ${err.message}` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `${t('aiError')} ${err.message}` }]);
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -86,10 +88,10 @@ export const VariantAiPanel: React.FC<Props> = ({ variant, onClose }) => {
   };
 
   const SUGGESTIONS = [
-    "Klinik ahamiyati nima?",
-    "Davolash mumkinmi?",
-    "Irsiy ekanmi?",
-    "Boshqa genlar bilan bog'liqmi?",
+    t('sugClinical'),
+    t('sugTreatment'),
+    t('sugHereditary'),
+    t('sugGenes'),
   ];
 
   if (!variant) return null;
@@ -104,7 +106,7 @@ export const VariantAiPanel: React.FC<Props> = ({ variant, onClose }) => {
           <div style={S.headerLeft}>
             <div style={S.aiDot} />
             <div>
-              <div style={S.headerTitle}>AI Tahlil</div>
+              <div style={S.headerTitle}>{t('aiTitle')}</div>
               <div style={S.headerSub}>
                 {variant.geneName
                   ? <><span style={{ color: '#818cf8', fontWeight: 600 }}>{variant.geneName}</span> · {variant.chromosome}:{variant.position}</>
@@ -180,7 +182,7 @@ export const VariantAiPanel: React.FC<Props> = ({ variant, onClose }) => {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder="Savol bering..."
+            placeholder={t('aiPlaceholder')}
             disabled={loading}
           />
           <button

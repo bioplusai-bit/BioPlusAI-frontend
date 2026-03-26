@@ -6,10 +6,15 @@ import { JobCard }     from './components/JobCard';
 import { usePolling }  from './hooks/usePolling';
 import { uploadFile, getJobs, getJob, pauseJob, resumeJob } from './services/api';
 import type { JobSummary, JobDetail } from './types';
+import { useLang, setLang, t, type Lang } from './i18n';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://bioplusaiv1-production.up.railway.app';
 
+const LANG_FLAGS: Record<Lang, string> = { uz: '🇺🇿', en: '🇬🇧', ru: '🇷🇺', kk: '🇰🇿' };
+const LANG_NAMES: Record<Lang, string> = { uz: "O'z", en: 'EN', ru: 'RU', kk: 'ҚАЗ' };
+
 export default function App() {
+  const [lang, setLangState] = useLang();
   const [jobs,      setJobs]      = useState<JobSummary[]>([]);
   const [activeId,  setActiveId]  = useState<string | null>(null);
   const [detail,    setDetail]    = useState<JobDetail | null>(null);
@@ -41,7 +46,7 @@ export default function App() {
       const stub: JobSummary = {
         id: jobId, fileName: file.name,
         state: 'Processing', currentStep: 'Uploading',
-        progress: 0, stepMessage: 'Tayyorlanmoqda...',
+        progress: 0, stepMessage: t('preparing'),
         errorMessage: null, outputVcfKey: null,
         variantCount: 0, createdAt: new Date().toISOString(), finishedAt: null,
       };
@@ -49,11 +54,11 @@ export default function App() {
       setActiveId(jobId);
       setView('jobs');
     } catch (e: any) {
-      setError(e.response?.data?.error ?? e.message ?? 'Noma\'lum xato');
+      setError(e.response?.data?.error ?? e.message ?? t('unknownError'));
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [lang]);
 
   const handleSelect = useCallback(async (id: string) => {
     setActiveId(id); setDetail(null);
@@ -69,7 +74,7 @@ export default function App() {
     try {
       await pauseJob(activeId);
       setJobs(prev => prev.map(j => j.id === activeId ? { ...j, state: 'Paused' } : j));
-    } catch (e: any) { setError(e.response?.data?.error ?? 'To\'xtatib bo\'lmadi'); }
+    } catch (e: any) { setError(e.response?.data?.error ?? t('pauseError')); }
     finally { setActLoading(false); }
   }, [activeId]);
 
@@ -80,7 +85,7 @@ export default function App() {
       await resumeJob(activeId);
       setJobs(prev => prev.map(j => j.id === activeId ? { ...j, state: 'Processing' } : j));
       restart();
-    } catch (e: any) { setError(e.response?.data?.error ?? 'Davom ettirib bo\'lmadi'); }
+    } catch (e: any) { setError(e.response?.data?.error ?? t('resumeError')); }
     finally { setActLoading(false); }
   }, [activeId, restart]);
 
@@ -90,6 +95,11 @@ export default function App() {
     a.download = `bioplusai-report-${id.slice(0, 8)}.pdf`;
     a.click();
   }, []);
+
+  const switchLang = (l: Lang) => {
+    setLang(l);
+    setLangState(l);
+  };
 
   const activeJob = jobs.find(j => j.id === activeId);
   const displayProgress = progress ?? (activeJob ? {
@@ -108,7 +118,6 @@ export default function App() {
     <div style={S.root}>
       <style>{CSS}</style>
 
-      {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside style={S.sidebar}>
         <div style={S.logo}>
           <div style={S.logoMark}>
@@ -118,9 +127,21 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <div style={S.logoName}>BioPlusAI</div>
-            <div style={S.logoSub}>DNK Tahlil Platformasi</div>
+            <div style={S.logoName}>{t('appName')}</div>
+            <div style={S.logoSub}>{t('appSub')}</div>
           </div>
+        </div>
+
+        <div style={S.langBar}>
+          {((['uz', 'en', 'ru', 'kk'] as Lang[])).map(l => (
+            <button
+              key={l}
+              style={{ ...S.langBtn, ...(lang === l ? S.langActive : {}) }}
+              onClick={() => switchLang(l)}
+            >
+              {LANG_FLAGS[l]} {LANG_NAMES[l]}
+            </button>
+          ))}
         </div>
 
         <nav style={S.nav}>
@@ -129,7 +150,7 @@ export default function App() {
               <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
               <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
             </svg>
-            Fayl yuklash
+            {t('navUpload')}
           </button>
           <button style={{ ...S.navBtn, ...(view === 'jobs' ? S.navActive : {}) }} onClick={() => { setView('jobs'); loadJobs(); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -138,16 +159,15 @@ export default function App() {
               <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
               <line x1="3" y1="18" x2="3.01" y2="18"/>
             </svg>
-            Tarix
+            {t('navHistory')}
             {jobs.length > 0 && <span style={S.navCount}>{jobs.length}</span>}
           </button>
         </nav>
 
-        {/* Job list */}
         {view === 'jobs' && (
           <div style={S.jobList}>
             {jobs.length === 0
-              ? <div style={S.empty}>Hali hech qanday tahlil yo'q</div>
+              ? <div style={S.empty}>{t('noJobs')}</div>
               : jobs.map(j => (
                   <JobCard
                     key={j.id}
@@ -161,11 +181,10 @@ export default function App() {
         )}
       </aside>
 
-      {/* ── Main ────────────────────────────────────────────────── */}
       <main style={S.main}>
         {error && (
           <div style={S.errBanner}>
-            <span>⚠ {error}</span>
+            <span>{t('errorBanner')} {error}</span>
             <button style={S.errClose} onClick={() => setError(null)}>✕</button>
           </div>
         )}
@@ -173,10 +192,8 @@ export default function App() {
         {view === 'upload' && (
           <div style={S.page}>
             <div style={S.pageHeader}>
-              <h1 style={S.pageTitle}>DNK faylini tahlil qilish</h1>
-              <p style={S.pageDesc}>
-                BAM formatidagi fayl yuklang — DeepVariant yordamida variant qo'ng'iroqlari amalga oshiriladi
-              </p>
+              <h1 style={S.pageTitle}>{t('pageTitle')}</h1>
+              <p style={S.pageDesc}>{t('pageDesc')}</p>
             </div>
             <div style={S.uploadWrap}>
               <UploadZone onFile={handleUpload} loading={uploading} />
@@ -192,13 +209,12 @@ export default function App() {
                 <polyline points="14 2 14 8 20 8"/>
               </svg>
             </div>
-            <div style={S.emptyText}>Chap paneldan job tanlang</div>
+            <div style={S.emptyText}>{t('selectJob')}</div>
           </div>
         )}
 
         {view === 'jobs' && activeId && displayProgress && (
           <div style={S.detailPage}>
-            {/* Job header */}
             <div style={S.detailHeader}>
               <div>
                 <div style={S.detailTitle}>{displayProgress.fileName}</div>
@@ -208,13 +224,13 @@ export default function App() {
                 {isRunning && (
                   <button style={{ ...S.actionBtn, ...S.pauseBtn }} onClick={handlePause} disabled={actLoading}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                    To'xtatish
+                    {t('pause')}
                   </button>
                 )}
                 {isPaused && (
                   <button style={{ ...S.actionBtn, ...S.resumeBtn }} onClick={handleResume} disabled={actLoading}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    Davom ettirish
+                    {t('resume')}
                   </button>
                 )}
                 {isFinished && (
@@ -225,13 +241,12 @@ export default function App() {
                       <line x1="12" y1="18" x2="12" y2="12"/>
                       <line x1="9" y1="15" x2="15" y2="15"/>
                     </svg>
-                    PDF Hisobot
+                    {t('pdfReport')}
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Step tracker */}
             <div style={S.card}>
               <StepTracker
                 currentStep={displayProgress.currentStep}
@@ -241,7 +256,6 @@ export default function App() {
               />
             </div>
 
-            {/* VCF Viewer */}
             {(displayProgress.outputVcfKey || detail?.outputVcfKey) && (
               <div style={S.card}>
                 <div style={S.cardTitle}>
@@ -249,7 +263,7 @@ export default function App() {
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
                   </svg>
-                  DeepVariant natijasi
+                  {t('deepVariantResult')}
                   {displayProgress.variantCount > 0 && (
                     <span style={S.varBadge}>{displayProgress.variantCount} variant</span>
                   )}
@@ -268,7 +282,6 @@ export default function App() {
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
   root:         { display: 'flex', minHeight: '100vh', background: '#020c1b', fontFamily: '"IBM Plex Mono", "Fira Code", monospace', color: '#e2e8f0' },
   sidebar:      { width: 260, flexShrink: 0, background: '#030d1e', borderRight: '1px solid #0f1f35', display: 'flex', flexDirection: 'column', gap: 0 },
@@ -276,6 +289,9 @@ const S: Record<string, React.CSSProperties> = {
   logoMark:     { width: 36, height: 36, background: '#071d2e', border: '1px solid #0f3a56', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   logoName:     { fontSize: 14, fontWeight: 700, color: '#e2e8f0', letterSpacing: '0.05em' },
   logoSub:      { fontSize: 9, color: '#334155', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 1 },
+  langBar:      { display: 'flex', gap: 4, padding: '8px 10px', borderBottom: '1px solid #0f1f35', background: '#020c1b' },
+  langBtn:      { flex: 1, padding: '5px 4px', borderRadius: 5, border: '1px solid #1e293b', background: 'none', color: '#475569', cursor: 'pointer', fontSize: 10, fontWeight: 600, fontFamily: 'inherit', transition: 'all .15s', textAlign: 'center' as const },
+  langActive:   { background: '#071d2e', color: '#38bdf8', borderColor: '#0f3a56' },
   nav:          { display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 8px' },
   navBtn:       { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, border: 'none', background: 'none', color: '#475569', cursor: 'pointer', fontSize: 12, fontWeight: 500, textAlign: 'left', transition: 'all .15s', fontFamily: 'inherit' },
   navActive:    { background: '#071d2e', color: '#38bdf8', border: '1px solid #0f3a56' },

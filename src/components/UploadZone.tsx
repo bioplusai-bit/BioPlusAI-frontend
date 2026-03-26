@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { t } from '../i18n';
 
 interface Props {
   onFile: (f: File) => void;
@@ -76,9 +77,9 @@ export const UploadZone: React.FC<Props> = ({ onFile, loading }) => {
               </svg>
             </div>
             <div style={S.placeholderText}>
-              {drag ? 'Faylni tashlang' : 'BAM, VCF yoki FASTQ faylni tashlang'}
+              {drag ? '📂' : t('dropHere')}
             </div>
-            <div style={S.placeholderSub}>yoki bosib tanlang</div>
+            <div style={S.placeholderSub}>{t('or')} <span style={{ color: '#38bdf8' }}>{t('browse')}</span></div>
             <div style={S.formats}>
               {ACCEPTED.map(ext => (
                 <span key={ext} style={S.formatBadge}>{ext}</span>
@@ -96,14 +97,14 @@ export const UploadZone: React.FC<Props> = ({ onFile, loading }) => {
         {loading ? (
           <span style={S.btnContent}>
             <span style={S.spinner} />
-            Yuklanmoqda...
+            {t('uploading')}
           </span>
         ) : (
           <span style={S.btnContent}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
-            Analizni boshlash
+            {t('analyze')}
           </span>
         )}
       </button>

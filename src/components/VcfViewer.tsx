@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getVcfText, getVcfDownloadUrl, getJob } from '../services/api';
 import { VariantAiPanel } from './VariantAiPanel';
+import { t, useLang } from '../i18n';
 import type { VariantRow } from '../types';
 
 interface Props { jobId: string; fileName: string; hasAmData?: boolean; }
@@ -30,6 +31,7 @@ const CLINVAR_STYLE: Record<string, React.CSSProperties> = {
 };
 
 export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
+  useLang(); // re-render on lang change
   const [variants,        setVariants]        = useState<VariantRow[] | null>(null);
   const [vcfText,         setVcfText]         = useState<string | null>(null);
   const [loading,         setLoading]         = useState(true);
@@ -82,7 +84,7 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
             </div>
             <div>
               <div style={S.vcfTitle}>output.vcf</div>
-              <div style={S.vcfMeta}>{loading ? 'Yuklanmoqda...' : `${variants?.length ?? 0} variant · 🧬 bosib AI tahlil`}</div>
+              <div style={S.vcfMeta}>{loading ? t('vcfLoading') : `${variants?.length ?? 0} ${t('vcfMeta')}`}</div>
             </div>
           </div>
           <div style={S.headRight}>
@@ -91,7 +93,7 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
                 {pathCount    > 0 && <span style={{ ...S.badge, ...AM_STYLE.PATHOGENIC }}>{pathCount} PATHOGENIC</span>}
                 {benignCount  > 0 && <span style={{ ...S.badge, ...AM_STYLE.BENIGN }}>{benignCount} BENIGN</span>}
                 {spliceCount  > 0 && <span style={{ ...S.badge, ...HYENA_STYLE.SPLICE_SITE }}>{spliceCount} SPLICE</span>}
-                {diseaseCount > 0 && <span style={{ ...S.badge, background: 'rgba(99,102,241,.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,.3)' }}>🏥 {diseaseCount} kasallik</span>}
+                {diseaseCount > 0 && <span style={{ ...S.badge, background: 'rgba(99,102,241,.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,.3)' }}>🏥 {diseaseCount} {t('diseaseLabel')}</span>}
               </div>
             )}
             <button style={S.iconBtn} onClick={() => setExpanded(e => !e)}>
@@ -104,13 +106,13 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              VCF yuklab olish
+              {t('downloadVcf')}
             </button>
             <button style={S.pdfBtn} onClick={handlePdfDownload}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
               </svg>
-              PDF Hisobot
+              {t('pdfReport')}
             </button>
           </div>
         </div>
@@ -118,12 +120,12 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
         {/* Tabs */}
         {!loading && (
           <div style={S.tabs}>
-            <button style={{ ...S.tab, ...(activeTab === 'table' ? S.tabActive : {}) }} onClick={() => setActiveTab('table')}>📊 Jadval</button>
-            <button style={{ ...S.tab, ...(activeTab === 'vcf'   ? S.tabActive : {}) }} onClick={() => setActiveTab('vcf')}>📄 VCF fayl</button>
+            <button style={{ ...S.tab, ...(activeTab === 'table' ? S.tabActive : {}) }} onClick={() => setActiveTab('table')}>{t('tabTable')}</button>
+            <button style={{ ...S.tab, ...(activeTab === 'vcf'   ? S.tabActive : {}) }} onClick={() => setActiveTab('vcf')}>{t('tabVcf')}</button>
           </div>
         )}
 
-        {loading && <div style={S.stateBox}>Yuklanmoqda...</div>}
+        {loading && <div style={S.stateBox}>{t('vcfLoading')}</div>}
 
         {/* Table */}
         {!loading && activeTab === 'table' && variants && (
@@ -132,14 +134,14 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
               <thead>
                 <tr>
                   <th style={S.th}></th>
-                  <th style={S.th}>Chr</th>
-                  <th style={S.th}>Pozitsiya</th>
-                  <th style={S.th}>Ref → Alt</th>
-                  <th style={S.th}>Gen</th>
-                  {hasAmData  && <th style={S.th}>AM</th>}
-                  {hasHyena   && <th style={S.th}>HyenaDNA</th>}
-                  {hasClinVar && <th style={S.th}>ClinVar</th>}
-                  {hasClinVar && <th style={{ ...S.th, minWidth: 180 }}>Kasallik</th>}
+                  <th style={S.th}>{t('colChr')}</th>
+                  <th style={S.th}>{t('colPos')}</th>
+                  <th style={S.th}>{t('colRefAlt')}</th>
+                  <th style={S.th}>{t('colGene')}</th>
+                  {hasAmData  && <th style={S.th}>{t('colAm')}</th>}
+                  {hasHyena   && <th style={S.th}>{t('colHyena')}</th>}
+                  {hasClinVar && <th style={S.th}>{t('colClinVar')}</th>}
+                  {hasClinVar && <th style={{ ...S.th, minWidth: 180 }}>{t('colDisease')}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -200,8 +202,8 @@ export const VcfViewer: React.FC<Props> = ({ jobId, fileName, hasAmData }) => {
             </table>
             {!expanded && variants.length > 50 && (
               <div style={S.more}>
-                ... va yana {variants.length - 50} ta variant
-                <button style={S.moreBtn} onClick={() => setExpanded(true)}>Barchasini ko'rish</button>
+                ... {t('moreVariants')} {variants.length - 50} {t('moreVariantsSuffix')}
+                <button style={S.moreBtn} onClick={() => setExpanded(true)}>{t('showAll')}</button>
               </div>
             )}
           </div>

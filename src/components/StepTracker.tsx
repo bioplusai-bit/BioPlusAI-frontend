@@ -1,15 +1,16 @@
 import React from 'react';
 import type { AnalysisStep, JobState } from '../types';
+import { t } from '../i18n';
 
-interface Step { key: AnalysisStep; label: string; sub: string; }
+interface Step { key: AnalysisStep; labelKey: string; subKey: string; }
 
 const STEPS: Step[] = [
-  { key: 'Uploading',     label: 'MinIO',          sub: 'Fayl saqlanmoqda'       },
-  { key: 'DeepVariant',   label: 'DeepVariant',    sub: 'BAM → VCF tahlil'      },
-  { key: 'AlphaMissense', label: 'AlphaMissense',  sub: 'Variant tasniflash'     },
-  { key: 'HyenaDna',      label: 'HyenaDNA',       sub: 'Sequence pattern'       },
-  { key: 'ClinVar',       label: 'ClinVar',         sub: 'Kasallik aniqlash'     },
-  { key: 'Completed',     label: 'Tayyor',          sub: "Natija ko'rish mumkin" },
+  { key: 'Uploading',     labelKey: 'MinIO',           subKey: 'stepMinioSub'         },
+  { key: 'DeepVariant',   labelKey: 'DeepVariant',     subKey: 'stepDeepVariantSub'   },
+  { key: 'AlphaMissense', labelKey: 'AlphaMissense',   subKey: 'stepAlphaMissenseSub' },
+  { key: 'HyenaDna',      labelKey: 'HyenaDNA',        subKey: 'stepHyenaDnaSub'      },
+  { key: 'ClinVar',       labelKey: 'ClinVar',         subKey: 'stepClinVarSub'       },
+  { key: 'Completed',     labelKey: 'stepCompletedLabel', subKey: 'stepCompletedSub'  },
 ];
 
 const ORDER: AnalysisStep[] = [
@@ -47,6 +48,9 @@ export const StepTracker: React.FC<Props> = ({ currentStep, state, progress, mes
       <div style={S.stepsRow}>
         {STEPS.map((step, i) => {
           const status = getStatus(step.key, currentStep, state);
+          // labelKey is either a fixed string (like 'MinIO') or a translation key
+          const label = step.labelKey.startsWith('step') ? t(step.labelKey as any) : step.labelKey;
+          const sub   = t(step.subKey as any);
           return (
             <React.Fragment key={step.key}>
               <div style={S.stepCol}>
@@ -56,8 +60,8 @@ export const StepTracker: React.FC<Props> = ({ currentStep, state, progress, mes
                    status === 'active' ? <ActiveDot /> :
                    <span style={S.circleNum}>{i + 1}</span>}
                 </div>
-                <div style={S.stepLabel}>{step.label}</div>
-                <div style={S.stepSub}>{step.sub}</div>
+                <div style={S.stepLabel}>{label}</div>
+                <div style={S.stepSub}>{sub}</div>
               </div>
               {i < STEPS.length - 1 && (
                 <div style={{ ...S.line, ...(status === 'done' ? S.lineDone : {}) }} />
